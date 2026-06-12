@@ -7,9 +7,8 @@ function normalizeArrays(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== "object" || Array.isArray(obj)) return obj;
   const keys = Object.keys(obj);
-  if (keys.length === 2 && keys.includes("0") && keys.includes("1") &&
-      typeof obj["0"] === "string" && typeof obj["1"] === "string") {
-    return [obj["0"], obj["1"]];
+ if (keys.length === 2 && keys.includes("0") && keys.includes("1")) {
+  return [String(obj["0"]), String(obj["1"])];
   }
   const result = {};
   for (const k of keys) result[k] = normalizeArrays(obj[k]);
