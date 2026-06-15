@@ -166,7 +166,13 @@ const ADMIN_PASS = "mexico2026";
 function toArr(pred) {
   if (!pred) return null;
   if (Array.isArray(pred)) return pred;
-  if (typeof pred === "object" && "0" in pred && "1" in pred) return [pred["0"], pred["1"]];
+  if (typeof pred === "object" && "0" in pred && "1" in pred) return [String(pred["0"]), String(pred["1"])];
+  if (typeof pred === "string") {
+    try {
+      const parsed = JSON.parse(pred);
+      if (Array.isArray(parsed) && parsed.length === 2) return [String(parsed[0]), String(parsed[1])];
+    } catch(e) {}
+  }
   return null;
 }
 
@@ -1058,4 +1064,3 @@ export default function App() {
     </>
   );
 }
-//V2
