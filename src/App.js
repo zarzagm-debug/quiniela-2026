@@ -50,8 +50,7 @@ async function dbDelete(path) {
 }
 
 // ── FECHA LÍMITE ──────────────────────────────────────────────────────────────
-const DEADLINE = new Date("2026-06-16T05:00:00Z"); //temp
-const isPastDeadline = () => new Date() >= DEADLINE;
+const isPastDeadline = () => new Date() >= new Date(window._deadline || "2026-06-11T06:00:00Z");
 
 // ── PARTIDOS ORDENADOS POR FECHA ──────────────────────────────────────────────
 const ALL_MATCHES = [
