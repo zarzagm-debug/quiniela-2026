@@ -460,6 +460,7 @@ export default function App() {
     if (data.preds)    setPreds(data.preds);
     if (data.results)  setResults(data.results);
     if (data.globalLocked !== undefined) setGlobalLocked(data.globalLocked);
+    if (data.deadline) window._deadline = data.deadline;
     setLastSync(new Date());
     if (!silent) setLoading(false); else setSyncing(false);
   }, []);
