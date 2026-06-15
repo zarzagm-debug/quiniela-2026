@@ -163,24 +163,21 @@ const FLAGS = {
 
 const ADMIN_PASS = "mexico2026";
 
-function toArr(pred) {
-  if (!pred) return null;
-  if (Array.isArray(pred)) return pred;
-  if (typeof pred === "object" && "0" in pred && "1" in pred) return [String(pred["0"]), String(pred["1"])];
-  if (typeof pred === "string") {
-    try {
-      const parsed = JSON.parse(pred);
-      if (Array.isArray(parsed) && parsed.length === 2) return [String(parsed[0]), String(parsed[1])];
-    } catch(e) {}
-  }
-  return null;
-}
-
 function calcPoints(pred, real, mexMatch) {
   if (!pred || !real) return null;
   if (mexMatch) {
-    const arr = toArr(pred);
-    const [pL, pV] = arr ? arr : [null,null];
+    // Normalizar pred: puede ser array, objeto {0,1} o string JSON
+    let pL = null, pV = null;
+    if (Array.isArray(pred) && pred.length === 2) {
+      pL = pred[0]; pV = pred[1];
+    } else if (typeof pred === "object" && pred !== null && "0" in pred && "1" in pred) {
+      pL = String(pred["0"]); pV = String(pred["1"]);
+    } else if (typeof pred === "string") {
+      try {
+        const parsed = JSON.parse(pred);
+        if (Array.isArray(parsed) && parsed.length === 2) { pL = String(parsed[0]); pV = String(parsed[1]); }
+      } catch(e) {}
+    }
     const [rL, rV] = real;
     if (pL===""||pV===""||rL===""||rV===""||pL==null) return null;
     const pLn=parseInt(pL),pVn=parseInt(pV),rLn=parseInt(rL),rVn=parseInt(rV);
@@ -212,9 +209,11 @@ function countCaptured(playerPreds) {
   for (const m of ALL_MATCHES) {
     const pred = playerPreds[m.id];
     if (isMex(m)) {
-      const arr = toArr(pred);
-      if (arr && arr[0]!=="" && arr[0]!==null && arr[0]!==undefined &&
-          arr[1]!=="" && arr[1]!==null && arr[1]!==undefined) count++;
+      let a0=null,a1=null;
+      if (Array.isArray(pred)&&pred.length===2){a0=pred[0];a1=pred[1];}
+      else if(pred&&typeof pred==="object"&&"0"in pred&&"1"in pred){a0=String(pred["0"]);a1=String(pred["1"]);}
+      else if(typeof pred==="string"){try{const p=JSON.parse(pred);if(Array.isArray(p)&&p.length===2){a0=String(p[0]);a1=String(p[1]);}}catch(e){}}
+      if (a0!==null&&a0!==""&&a1!==null&&a1!=="") count++;
     } else {
       if (pred && pred !== "") count++;
     }
@@ -643,7 +642,13 @@ export default function App() {
 
   const predLabel = (pred, m) => {
     if (!pred) return null;
-    if (isMex(m)) { const arr=toArr(pred); return arr&&arr[0]!==""&&arr[1]!==""?arr[0]+"-"+arr[1]:null; }
+    if (isMex(m)) {
+      let a0=null,a1=null;
+      if(Array.isArray(pred)&&pred.length===2){a0=pred[0];a1=pred[1];}
+      else if(pred&&typeof pred==="object"&&"0"in pred&&"1"in pred){a0=String(pred["0"]);a1=String(pred["1"]);}
+      else if(typeof pred==="string"){try{const p=JSON.parse(pred);if(Array.isArray(p)&&p.length===2){a0=String(p[0]);a1=String(p[1]);}}catch(e){}}
+      return a0!==null&&a0!==""&&a1!==null&&a1!==""?a0+"-"+a1:null;
+    }
     return pred==="L"?"Gana "+m.local:pred==="V"?"Gana "+m.visit:"Empate";
   };
 
@@ -681,12 +686,12 @@ export default function App() {
                   <div className="ctrl-lbl">Tu pronostico (marcador exacto)</div>
                   <div className="score-inputs">
                     <input className="sinp" type="number" min="0" max="99" placeholder="0" disabled={myLocked}
-                      value={toArr(pred)?toArr(pred)[0]:""}
-                      onChange={e=>{const c=toArr(pred)||["",""]; setPred(m.id,[e.target.value,c[1]]);}}/>
+                      value={Array.isArray(pred)?pred[0]:typeof pred==="string"?JSON.parse(pred||"[\"\",\"\"]")[0]:""}
+                      onChange={e=>{const c=Array.isArray(pred)?pred:typeof pred==="string"?(()=>{try{return JSON.parse(pred);}catch(e){return["",""];}})()):["",""]; setPred(m.id,[e.target.value,c[1]]);}}/>
                     <span className="sdash">-</span>
                     <input className="sinp" type="number" min="0" max="99" placeholder="0" disabled={myLocked}
-                      value={toArr(pred)?toArr(pred)[1]:""}
-                      onChange={e=>{const c=toArr(pred)||["",""]; setPred(m.id,[c[0],e.target.value]);}}/>
+                      value={Array.isArray(pred)?pred[1]:typeof pred==="string"?JSON.parse(pred||"[\"\",\"\"]")[1]:""}
+                      onChange={e=>{const c=Array.isArray(pred)?pred:typeof pred==="string"?(()=>{try{return JSON.parse(pred);}catch(e){return["",""];}})()):["",""]; setPred(m.id,[c[0],e.target.value]);}}/>
                   </div>
                   {myLocked?<div className="hint lk">Pronosticos cerrados</div>
                            :<div className="hint mx">Exacto = 6 pts | Solo resultado = 3 pts</div>}
