@@ -3,25 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 // ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
 const FB_URL = "https://quiniela-2026-633d7-default-rtdb.firebaseio.com";
 
-// Firebase convierte arrays a objetos {0: x, 1: y} — esto los normaliza de vuelta
-function normalizeArrays(obj) {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj !== "object" || Array.isArray(obj)) return obj;
-  const keys = Object.keys(obj);
-  // Si tiene exactamente claves "0" y "1" es un marcador Mexico — convertir a array
-  if (keys.length === 2 && keys.includes("0") && keys.includes("1")) {
-    return [String(obj["0"]), String(obj["1"])];
-  }
-  const result = {};
-  for (const k of keys) result[k] = normalizeArrays(obj[k]);
-  return result;
-}
-
 async function dbGet() {
   try {
     const r = await fetch(`${FB_URL}/quiniela.json`);
     const data = await r.json();
-    return normalizeArrays(data) || {};
+    return data || {};
   } catch(e) {
     console.error("dbGet error:", e);
     return {};
@@ -64,7 +50,7 @@ async function dbDelete(path) {
 }
 
 // ── FECHA LÍMITE ──────────────────────────────────────────────────────────────
-const DEADLINE = new Date("2026-06-16T05:00:00Z");
+const DEADLINE = new Date("2026-06-11T05:00:00Z");
 const isPastDeadline = () => new Date() >= DEADLINE;
 
 // ── PARTIDOS ORDENADOS POR FECHA ──────────────────────────────────────────────
