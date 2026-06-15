@@ -3,12 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 // ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
 const FB_URL = "https://quiniela-2026-633d7-default-rtdb.firebaseio.com";
 
+// Firebase convierte arrays a objetos {0: x, 1: y} — esto los normaliza de vuelta
 function normalizeArrays(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== "object" || Array.isArray(obj)) return obj;
   const keys = Object.keys(obj);
- if (keys.length === 2 && keys.includes("0") && keys.includes("1")) {
-  return [String(obj["0"]), String(obj["1"])];
+  // Si tiene exactamente claves "0" y "1" es un marcador Mexico — convertir a array
+  if (keys.length === 2 && keys.includes("0") && keys.includes("1")) {
+    return [String(obj["0"]), String(obj["1"])];
   }
   const result = {};
   for (const k of keys) result[k] = normalizeArrays(obj[k]);
@@ -17,9 +19,9 @@ function normalizeArrays(obj) {
 
 async function dbGet() {
   try {
-    const r = await fetch(${FB_URL}/quiniela.json);
+    const r = await fetch(`${FB_URL}/quiniela.json`);
     const data = await r.json();
-    return normalizeArrays(data) || {};    
+    return normalizeArrays(data) || {};
   } catch(e) {
     console.error("dbGet error:", e);
     return {};
@@ -62,7 +64,7 @@ async function dbDelete(path) {
 }
 
 // ── FECHA LÍMITE ──────────────────────────────────────────────────────────────
-const DEADLINE = new Date("2026-06-11T17:00:00Z");
+const DEADLINE = new Date("2026-06-11T05:00:00Z");
 const isPastDeadline = () => new Date() >= DEADLINE;
 
 // ── PARTIDOS ORDENADOS POR FECHA ──────────────────────────────────────────────
@@ -161,10 +163,18 @@ const FLAGS = {
 
 const ADMIN_PASS = "mexico2026";
 
+function toArr(pred) {
+  if (!pred) return null;
+  if (Array.isArray(pred)) return pred;
+  if (typeof pred === "object" && "0" in pred && "1" in pred) return [pred["0"], pred["1"]];
+  return null;
+}
+
 function calcPoints(pred, real, mexMatch) {
   if (!pred || !real) return null;
   if (mexMatch) {
-    const [pL, pV] = Array.isArray(pred) ? pred : [null,null];
+    const arr = toArr(pred);
+    const [pL, pV] = arr ? arr : [null,null];
     const [rL, rV] = real;
     if (pL===""||pV===""||rL===""||rV===""||pL==null) return null;
     const pLn=parseInt(pL),pVn=parseInt(pV),rLn=parseInt(rL),rVn=parseInt(rV);
@@ -196,8 +206,9 @@ function countCaptured(playerPreds) {
   for (const m of ALL_MATCHES) {
     const pred = playerPreds[m.id];
     if (isMex(m)) {
-      if (Array.isArray(pred) && pred[0]!=="" && pred[0]!==null && pred[0]!==undefined &&
-          pred[1]!=="" && pred[1]!==null && pred[1]!==undefined) count++;
+      const arr = toArr(pred);
+      if (arr && arr[0]!=="" && arr[0]!==null && arr[0]!==undefined &&
+          arr[1]!=="" && arr[1]!==null && arr[1]!==undefined) count++;
     } else {
       if (pred && pred !== "") count++;
     }
@@ -626,7 +637,7 @@ export default function App() {
 
   const predLabel = (pred, m) => {
     if (!pred) return null;
-    if (isMex(m)) return Array.isArray(pred)&&pred[0]!==""&&pred[1]!==""?pred[0]+"-"+pred[1]:null;
+    if (isMex(m)) { const arr=toArr(pred); return arr&&arr[0]!==""&&arr[1]!==""?arr[0]+"-"+arr[1]:null; }
     return pred==="L"?"Gana "+m.local:pred==="V"?"Gana "+m.visit:"Empate";
   };
 
@@ -664,12 +675,12 @@ export default function App() {
                   <div className="ctrl-lbl">Tu pronostico (marcador exacto)</div>
                   <div className="score-inputs">
                     <input className="sinp" type="number" min="0" max="99" placeholder="0" disabled={myLocked}
-                      value={Array.isArray(pred)?pred[0]:""}
-                      onChange={e=>{const c=Array.isArray(pred)?pred:["",""]; setPred(m.id,[e.target.value,c[1]]);}}/>
+                      value={toArr(pred)?toArr(pred)[0]:""}
+                      onChange={e=>{const c=toArr(pred)||["",""]; setPred(m.id,[e.target.value,c[1]]);}}/>
                     <span className="sdash">-</span>
                     <input className="sinp" type="number" min="0" max="99" placeholder="0" disabled={myLocked}
-                      value={Array.isArray(pred)?pred[1]:""}
-                      onChange={e=>{const c=Array.isArray(pred)?pred:["",""]; setPred(m.id,[c[0],e.target.value]);}}/>
+                      value={toArr(pred)?toArr(pred)[1]:""}
+                      onChange={e=>{const c=toArr(pred)||["",""]; setPred(m.id,[c[0],e.target.value]);}}/>
                   </div>
                   {myLocked?<div className="hint lk">Pronosticos cerrados</div>
                            :<div className="hint mx">Exacto = 6 pts | Solo resultado = 3 pts</div>}
